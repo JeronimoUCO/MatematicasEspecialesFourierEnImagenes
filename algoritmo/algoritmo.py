@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 
+
 def cargar_imagen(imagen):
     # Cargar la imagen utilizando OpenCV y escala de grises
 
@@ -17,27 +18,53 @@ def cargar_imagen(imagen):
 
 def calcular_matriz_de_distancias(imagen):
     # Obtener las dimensiones de la imagen
-    alto, ancho = imagen.shape
+    ALTO,ANCHO = imagen.shape
 
-
-    u_central = ancho // 2
-    v_central = alto // 2
-
-    D = np.zeros((alto, ancho), dtype=np.float32)
+    u_central = ANCHO // 2
+    v_central = ALTO // 2
 
     # Calcular las distancias euclidianas y almacenarlas en D
-    for v in range(alto):
-        for u in range(ancho):
-            distancia = np.sqrt((u - u_central) ** 2 + (v - v_central) ** 2)
-            D[v, u] = distancia
+    u = np.arange(ANCHO)
+    v = np.arange(ALTO)
+
+    # Utilizar la función meshgrid para crear matrices de coordenadas
+    U, V = np.meshgrid(u, v)    
+
+    # Calcular la distancia euclidiana de cada punto al origen
+    D = np.sqrt((U)**2 + (V)**2)
 
     return D
 
-def calcular_H(D, theta):
+def calcular_D0(imagen):
+    # Obtener las dimensiones de la imagen
+    ALTO,ANCHO = imagen.shape
+
+    u_central = ANCHO // 2
+    v_central = ALTO // 2
+
+    # Calcular las distancias euclidianas y almacenarlas en D
+    u = np.arange(ANCHO)
+    v = np.arange(ALTO)
+
+    # Utilizar la función meshgrid para crear matrices de coordenadas
+    U, V = np.meshgrid(u, v)    
+
+    # Calcular la distancia euclidiana de cada punto al origen
+    D = np.sqrt((U-u_central)**2 + (V-v_central)**2)
+
+    return D
+
+def calcular_H_Gaussiana(D, theta):
     # Calcular H(u, v)
     E = math.e
-    H = E ** (-((D ** 2) / (2 * (theta ** 2))))
+    H =E ** (-((D ** 2) / (2 * (theta ** 2))))
 
+    return H
+
+def calcular_H_low_pass(D_0,D):
+    # Calcular H(u, v)
+    H =np.where(D > D_0, 1, 0)
+    print(H)
     return H
 
 
@@ -53,12 +80,21 @@ def guardar_imagen(carpeta, nombre_archivo, imagen):
     ruta_guardar = os.path.join(carpeta, nombre_archivo)
     cv2.imwrite(ruta_guardar, imagen)
 
+def centrar_espectro(imagen):
+    ALTO,ANCHO = imagen.shape
+    u = np.arange(ANCHO)
+    v = np.arange(ALTO)
+    U, V = np.meshgrid(u, v)
+    imagen_centrada=np.abs(imagen * (-1) ** (U + V))
+    return imagen_centrada
+    
+
 def restaurar(imagen, sigma):
     imagen=cargar_imagen(imagen)
 
     if imagen is not None:
-        D = calcular_matriz_de_distancias(imagen)
-        H = calcular_H(D, sigma)
+        H = calcular_H_Gaussiana(calcular_matriz_de_distancias(imagen),sigma)
         G=calcular_transformada_fourier(imagen)
         resultado=calcular_transformada_inversa(G, H)
+        
         return resultado

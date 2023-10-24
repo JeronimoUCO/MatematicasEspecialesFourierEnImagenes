@@ -5,7 +5,7 @@ import cv2
 
 st.title("Sube una imagen borrosa que quieras restaurar")
 test_image=st.file_uploader("Escoge una imagen")
-sigma=st.slider("Mueve este slider para ajustar la limpieza de tu imagen",0,1000,1)
+sigma=st.slider("Mueve este slider para ajustar la limpieza de tu imagen",0,5000,10)
 
 if test_image is not None:
   col1,col2=st.columns(2)
